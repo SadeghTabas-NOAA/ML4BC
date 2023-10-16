@@ -25,6 +25,28 @@ def load_and_preprocess_data(start_date, end_date):
     # Implement loading and preprocessing of data for the given date range
     pass
 
+
+# Split the data into training, validation, and test sets
+train_start_date = "yyyymmdd"
+train_end_date = "yyyymmdd"
+validation_start_date = "yyyymmdd"
+validation_end_date = "yyyymmdd"
+test_start_date = "yyyymmdd"
+test_end_date = "yyyymmdd"
+
+train_gfs_data, train_era5_data = load_and_preprocess_data(train_start_date, train_end_date)
+validation_gfs_data, validation_era5_data = load_and_preprocess_data(validation_start_date, validation_end_date)
+test_gfs_data, test_era5_data = load_and_preprocess_data(test_start_date, test_end_date)
+
+# Convert NumPy arrays to PyTorch tensors and move to GPU if available
+train_gfs_data = torch.from_numpy(train_gfs_data).float().to(device)
+train_era5_data = torch.from_numpy(train_era5_data).float().to(device)
+validation_gfs_data = torch.from_numpy(validation_gfs_data).float().to(device)
+validation_era5_data = torch.from_numpy(validation_era5_data).float().to(device)
+test_gfs_data = torch.from_numpy(test_gfs_data).float().to(device)
+test_era5_data = torch.from_numpy(test_era5_data).float().to(device)
+
+
 # Check if a pretrained model exists
 pretrained_model_path = 'pretrained_model.pth'
 pretrained_model_exists = os.path.exists(pretrained_model_path)
