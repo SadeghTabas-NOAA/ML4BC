@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -J gfs_process
 #SBATCH -o /contrib/Sadegh.Tabas/ML4BC/gfs_output.out
-#SBATCH -e /contrib/Sadegh.Tabas/ML4BC/gfs_output.out
+#SBATCH -e /contrib/Sadegh.Tabas/ML4BC/gfs_err.err
 #SBATCH -N 1
 #SBATCH -t 30-00:00:00  # 1 month (30 days)
 
