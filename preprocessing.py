@@ -37,7 +37,22 @@ class DataProcessor:
 
 
     def gfs_process(self):
-
+        # from datetime import time
+        # Specify the local directory where you want to save the GFS files
+        if self.download_directory is None:
+            self.local_base_directory = os.path.join(os.getcwd(), 'noaa-gfs-bdp-pds-data')  # Use the current directory if not specified
+        else:
+            self.local_base_directory = os.path.join(self.download_directory, 'noaa-gfs-bdp-pds-data')
+        os.makedirs(self.local_base_directory, exist_ok=True)
+        
+        self.output_gfs = os.path.join(self.output_directory, 'GFS')
+        # Check if 'output_directory' exists and create it if it doesn't
+        os.makedirs(self.output_gfs, exist_ok=True)
+        
+        # Loop through the 6-hour intervals
+        current_datetime = datetime.combine(self.start_date, datetime.min.time())
+        end_datetime = datetime.combine(self.end_date, time(18, 0, 0))
+        
 
 
     def era5_process(self):
