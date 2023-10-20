@@ -89,6 +89,8 @@ class DataProcessor:
 
                     # create a netcdf dataset using the matching grib message
                     lats, lons = variable_message.latlons()
+                    lats = lats[:,0]
+                    lons = lons[0,:]
                     data = variable_message.values
                     steps = variable_message.validDate
 
@@ -97,8 +99,8 @@ class DataProcessor:
                             't2m': (['lat', 'lon'], data)
                         },
                         coords={
-                            'latitude': (['lat', 'lon'], lats),
-                            'longitude': (['lat', 'lon'], lons),
+                            'latitude': lats,
+                            'longitude': lons,
                             'time': steps,  
                         }
                     )
