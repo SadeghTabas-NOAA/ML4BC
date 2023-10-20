@@ -104,6 +104,9 @@ class DataProcessor:
                             'time': steps,  
                         }
                     )
+                    ds['latitude'] = ds['latitude'].astype('float32')
+                    ds['longitude'] = ds['longitude'].astype('float32')
+                    ds['t2m'] = ds['t2m'].astype('float32')
                     mergedDSs.append(ds)
                     
             # final_dataset = xr.merge(mergedDSs)
