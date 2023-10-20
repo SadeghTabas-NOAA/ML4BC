@@ -37,7 +37,6 @@ class DataProcessor:
 
 
     def gfs_process(self):
-        from datetime import time
         # Specify the local directory where you want to save the GFS files
         if self.download_directory is None:
             self.local_base_directory = os.path.join(os.getcwd(), 'noaa-gfs-bdp-pds-data')  # Use the current directory if not specified
@@ -91,7 +90,7 @@ class DataProcessor:
                     # create a netcdf dataset using the matching grib message
                     lats, lons = variable_message.latlons()
                     data = variable_message.values
-                    time = variable_message.validDate
+                    steps = variable_message.validDate
 
                     ds = xr.Dataset(
                         data_vars={
@@ -100,7 +99,7 @@ class DataProcessor:
                         coords={
                             'latitude': (['lat', 'lon'], lats),
                             'longitude': (['lat', 'lon'], lons),
-                            'time': time,  
+                            'time': steps,  
                         }
                     )
                     mergedDSs.append(ds)
