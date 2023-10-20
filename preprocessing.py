@@ -96,11 +96,11 @@ class DataProcessor:
 
                     ds = xr.Dataset(
                         data_vars={
-                            't2m': (['lat', 'lon'], data)
+                            't2m': (['latitude', 'longitude'], data)
                         },
                         coords={
-                            'latitude': lats,
                             'longitude': lons,
+                            'latitude': lats,
                             'time': steps,  
                         }
                     )
