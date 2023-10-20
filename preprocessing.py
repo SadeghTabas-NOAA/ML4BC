@@ -37,7 +37,7 @@ class DataProcessor:
 
 
     def gfs_process(self):
-        # from datetime import time
+        from datetime import time
         # Specify the local directory where you want to save the GFS files
         if self.download_directory is None:
             self.local_base_directory = os.path.join(os.getcwd(), 'noaa-gfs-bdp-pds-data')  # Use the current directory if not specified
