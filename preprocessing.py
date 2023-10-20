@@ -10,3 +10,14 @@ import argparse
 import fnmatch
 import pygrib
 import cdsapi
+
+class DataProcessor:
+    def __init__(self, start_date, end_date, output_directory=None, download_directory=None, keep_downloaded_data=False):
+
+
+
+    def gfs_process(self):
+
+
+
+    def era5_process(self):
