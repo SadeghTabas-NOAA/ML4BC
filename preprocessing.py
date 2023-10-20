@@ -174,8 +174,24 @@ class DataProcessor:
                     'format': 'netcdf',
                 },
                 f'{local_file_path}')
+            
             print ('ERA5 t2m Data Downloading Completed')
+            
+            for hour in [0, 6, 12, 18]:
+                # Combine the date and time to create a new datetime object
+                frame_start = datetime.combine(current_date, time(hour,0,0))
+                frame_end = frame_start + timedelta(hours=49)
+                
+                current_ds = xr.open_dataset(local_file_path)
+                
+                # Slice the dataset based on the time range
+                sliced_ds = current_ds.sel(time=slice(frame_start, frame_end))
 
+                # Define the output NetCDF file name
+                output_file_name = f'ERA5.t2m.{frame_start.strftime("%Y%m%d%H")}.nc'
+                output_file_path = os.path.join(self.output_era5, output_file_name)
+                sliced_ds.to_netcdf(output_file_path)
+                print(f"Saved the dataset to {output_file_path}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Download and process GFS and ERA5 data")
