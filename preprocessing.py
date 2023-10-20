@@ -143,7 +143,38 @@ class DataProcessor:
         # Loop through the 6-hour intervals
         current_datetime = datetime.combine(self.start_date, datetime.min.time())
         end_datetime = datetime.combine(self.end_date, time(18, 0, 0))
+        while current_datetime <= end_datetime:
+            local_directory = self.local_base_directory
+            
+            current_date = current_datetime.date()
+            current_end = current_date + timedelta(days=3)
+            era5_filename = 'ERA5_t2m_'+str(current_date)+'_to_'+str(current_end)+'.nc'
 
+            # Define the local file path
+            local_file_path = os.path.join(local_directory, era5_filename)
+            print ('Start Downloading ERA5 t2m Data from', str(current_date), 'to', str(current_end))
+            
+            self.cds.retrieve(
+                'reanalysis-era5-single-levels',
+                {
+                    'product_type': 'reanalysis',
+                    'variable': '2m_temperature',
+                    'grid': '0.25/0.25',
+                    'date': f'{current_date}/{current_end}',
+                    'time': [
+                        '00:00', '01:00', '02:00',
+                        '03:00', '04:00', '05:00',
+                        '06:00', '07:00', '08:00',
+                        '09:00', '10:00', '11:00',
+                        '12:00', '13:00', '14:00',
+                        '15:00', '16:00', '17:00',
+                        '18:00', '19:00', '20:00',
+                        '21:00', '22:00', '23:00',
+                    ],
+                    'format': 'netcdf',
+                },
+                f'{local_file_path}')
+            print ('ERA5 t2m Data Downloading Completed')
 
 
 if __name__ == "__main__":
