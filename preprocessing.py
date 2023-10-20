@@ -1,3 +1,9 @@
+'''
+Description
+@uthor: Sadegh Sadeghi Tabas (sadegh.tabas@noaa.gov)
+Revision history:
+    -20231019: Sadegh Tabas, initial code
+'''
 import os
 import boto3
 import xarray as xr
