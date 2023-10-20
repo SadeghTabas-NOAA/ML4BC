@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -J gfs_process
+#SBATCH -J era5_process
 #SBATCH -o era5_output.out
 #SBATCH -e era5_err.err
 #SBATCH -N 1
