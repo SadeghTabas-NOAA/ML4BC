@@ -34,3 +34,10 @@ if __name__ == "__main__":
     parser.add_argument("-k", "--keep", help="Keep downloaded data (optional)", action="store_true", default=False)
     parser.add_argument("-p", "--process", nargs="*", choices=["gfs", "era5"], help="Specify which process to run")
     args = parser.parse_args()
+
+    start_date = datetime.strptime(args.start_date, "%Y%m%d")
+    end_date = datetime.strptime(args.end_date, "%Y%m%d")
+    output_directory = args.output
+    download_directory = args.download
+    keep_downloaded_data = args.keep
+
