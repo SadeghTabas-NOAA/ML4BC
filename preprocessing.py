@@ -52,7 +52,67 @@ class DataProcessor:
         # Loop through the 6-hour intervals
         current_datetime = datetime.combine(self.start_date, datetime.min.time())
         end_datetime = datetime.combine(self.end_date, time(18, 0, 0))
+        while current_datetime <= end_datetime:
+            date_str = current_datetime.strftime("%Y%m%d")
+            time_str = current_datetime.strftime("%H")
+
+            # Construct the S3 prefix for the directory
+            s3_prefix = f"{self.root_directory}.{date_str}/{time_str}/{'atmos'}/{'gfs'}"
+
+            # List objects in the S3 directory
+            s3_objects = self.s3.list_objects_v2(Bucket=self.bucket_name, Prefix=s3_prefix)
+            
+            # Filter objects based on the desired formats
+            mergedDSs = []
+            for obj in s3_objects.get('Contents', []):
+                obj_key = obj['Key']
+                if fnmatch.fnmatch(obj_key, f'*.pgrb2.0p25.f00[0-2]'):
+                    # Define the local directory path where the file will be saved
+                    local_directory = os.path.join(self.local_base_directory, date_str, time_str)
+
+                    # Create the local directory if it doesn't exist
+                    os.makedirs(local_directory, exist_ok=True)
+
+                    # Define the local file path
+                    local_file_path = os.path.join(local_directory, os.path.basename(obj_key))
+
+                    # Download the file from S3 to the local path
+                    self.s3.download_file(self.bucket_name, obj_key, local_file_path)
+                    print(f"Downloaded {obj_key} to {local_file_path}")
+
+                    grbs = pygrib.open(local_file_path)
+                    
+                    # Specify the variable and level you want to extract
+                    variable_name = '2 metre temperature'
         
+                    # Find the matching grib message
+                    variable_message = grbs.select(name=variable_name)[0]
+
+                    # create a netcdf dataset using the matching grib message
+                    lats, lons = variable_message.latlons()
+                    data = variable_message.values
+                    time = variable_message.validDate
+
+                    ds = xr.Dataset(
+                        data_vars={
+                            't2m': (['lat', 'lon'], data)
+                        },
+                        coords={
+                            'latitude': (['lat', 'lon'], lats),
+                            'longitude': (['lat', 'lon'], lons),
+                            'time': time,  
+                        }
+                    )
+                    mergedDSs.append(ds)
+                    
+            # final_dataset = xr.merge(mergedDSs)
+            final_dataset = xr.concat(mergedDSs, dim='time')
+            
+            # Define the output NetCDF file name
+            output_file_name = f'GFS.t2m.{current_datetime.strftime("%Y%m%d%H")}.nc'
+            output_file_path = os.path.join(self.output_gfs, output_file_name)
+            final_dataset.to_netcdf(output_file_path)
+            print(f"Saved the dataset to {output_file_path}")
 
 
     def era5_process(self):
