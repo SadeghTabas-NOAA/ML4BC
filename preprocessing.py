@@ -113,8 +113,21 @@ class DataProcessor:
             output_file_path = os.path.join(self.output_gfs, output_file_name)
             final_dataset.to_netcdf(output_file_path)
             print(f"Saved the dataset to {output_file_path}")
+            
+            if not self.keep_downloaded_data:
+                # Remove downloaded data from the specified directory
+                print("Removing downloaded data...")
+                try:
+                    os.system(f"rm -rf {local_directory}")
+                    print("Downloaded data removed.")
+                except Exception as e:
+                    print(f"Error removing downloaded data: {str(e)}")               
 
+            # Move to the next 6-hour interval
+            current_datetime += timedelta(hours=6)
 
+        print("GFS Data Processing Completed.")
+        
     def era5_process(self):
 
 
