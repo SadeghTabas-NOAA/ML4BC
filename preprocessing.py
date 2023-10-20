@@ -65,7 +65,7 @@ class DataProcessor:
             mergedDSs = []
             for obj in s3_objects.get('Contents', []):
                 obj_key = obj['Key']
-                if fnmatch.fnmatch(obj_key, f'*.pgrb2.0p25.f00[0-2]'):
+                if fnmatch.fnmatch(obj_key, f'*.pgrb2.0p25.f0[0-4][0-9]'):
                     # Define the local directory path where the file will be saved
                     local_directory = os.path.join(self.local_base_directory, date_str, time_str)
 
