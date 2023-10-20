@@ -129,7 +129,20 @@ class DataProcessor:
         print("GFS Data Processing Completed.")
         
     def era5_process(self):
+        # Specify the local directory where you want to save the GFS files
+        if self.download_directory is None:
+            self.local_base_directory = os.path.join(os.getcwd(), 'ecmwf-era5-t2m-data')  # Use the current directory if not specified
+        else:
+            self.local_base_directory = os.path.join(self.download_directory, 'ecmwf-era5-t2m-data')
+        os.makedirs(self.local_base_directory, exist_ok=True)
 
+        self.output_era5 = os.path.join(self.output_directory, 'ERA5')
+        # Check if 'output_directory' exists and create it if it doesn't
+        os.makedirs(self.output_era5, exist_ok=True) 
+        
+        # Loop through the 6-hour intervals
+        current_datetime = datetime.combine(self.start_date, datetime.min.time())
+        end_datetime = datetime.combine(self.end_date, time(18, 0, 0))
 
 
 
