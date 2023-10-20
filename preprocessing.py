@@ -193,6 +193,19 @@ class DataProcessor:
                 sliced_ds.to_netcdf(output_file_path)
                 print(f"Saved the dataset to {output_file_path}")
 
+            if not self.keep_downloaded_data:
+                # Remove downloaded data from the specified directory
+                print("Removing downloaded data...")
+                try:
+                    os.system(f"rm -rf {local_file_path}")
+                    print("Downloaded data removed.")
+                except Exception as e:
+                    print(f"Error removing downloaded data: {str(e)}")
+                    
+            current_datetime += timedelta(days=1)
+            
+        print("ERA5 Data Processing Completed.")
+        
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Download and process GFS and ERA5 data")
     parser.add_argument("start_date", help="Start date in the format 'YYYYMMDD'")
