@@ -41,3 +41,8 @@ if __name__ == "__main__":
     download_directory = args.download
     keep_downloaded_data = args.keep
 
+    data_processor = DataProcessor(start_date, end_date, output_directory, download_directory, keep_downloaded_data)      
+    if not args.process or "gfs" in args.process:
+        data_processor.gfs_process()
+    if not args.process or "era5" in args.process:
+        data_processor.era5_process()
