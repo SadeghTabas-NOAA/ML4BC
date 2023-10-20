@@ -13,7 +13,27 @@ import cdsapi
 
 class DataProcessor:
     def __init__(self, start_date, end_date, output_directory=None, download_directory=None, keep_downloaded_data=False):
+        self.start_date = start_date
+        self.end_date = end_date
+        self.output_directory = output_directory
+        self.download_directory = download_directory
+        self.keep_downloaded_data = keep_downloaded_data
+        self.output_gfs = None
+        self.output_era5 = None
+        
+        # Specify the output directory where you want to save the files
+        if self.output_directory is None:
+            self.output_directory= os.getcwd()
+        
+        # Initialize the S3 client
+        self.s3 = boto3.client('s3', config=Config(signature_version=UNSIGNED))
 
+        # Specify the S3 bucket name and root directory for GFS forecasts
+        self.bucket_name = 'noaa-gfs-bdp-pds'
+        self.root_directory = 'gfs'
+
+        # Initialize the cdsapi client
+        self.cds = cdsapi.Client()
 
 
     def gfs_process(self):
