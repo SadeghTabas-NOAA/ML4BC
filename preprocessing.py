@@ -1,6 +1,6 @@
 '''
 Description
-@uthor: Sadegh Sadeghi Tabas (sadegh.tabas@noaa.gov)
+Author: Sadegh Sadeghi Tabas (sadegh.tabas@noaa.gov)
 Revision history:
     -20231019: Sadegh Tabas, initial code
 '''
