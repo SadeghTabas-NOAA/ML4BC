@@ -15,4 +15,4 @@ conda activate ml4bc
 cd /lustre/ML4BC
 
 # Run the Python script
-python3 preprocessing.py 20210323 20220101 -p gfs -o /contrib/Sadegh.Tabas/ML4BC/
+python3 preprocessing.py 20210323 20220101 -p gfs -o /contrib/$USER/ML4BC/
