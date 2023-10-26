@@ -2,61 +2,93 @@ import torch
 import torch.nn as nn
 import netCDF4 as nc
 import numpy as np
+import os
+from torch.utils.data import Dataset, DataLoader
+from torchvision import transforms
 
-# Load your NetCDF4 data
-def load_data(file_path):
-    dataset = nc.Dataset(file_path)
-    data = dataset.variables['data'][:].astype(np.float32)  # Adjust 'data' to the variable name in your file
-    dataset.close()
-    return data
 
-# Assuming you have separate files for biased and unbiased data
-biased_data = load_data('path_to_biased_data.nc')
-unbiased_data = load_data('path_to_unbiased_data.nc')
 
-# Create DataLoader or any other method to create batches
-# Here, we'll just create tensors, but for training, you should create DataLoader objects
-# with data augmentation, normalization, etc.
-biased_data = torch.tensor(biased_data)
-unbiased_data = torch.tensor(unbiased_data)
-
-# Define the model
 class Autoencoder(nn.Module):
     def __init__(self):
-        super(Autoencoder, self).__init()
-        
+        super(Autoencoder, self).__init__()
+
         # Encoder
         self.encoder = nn.Sequential(
-            nn.Conv3d(in_channels=50, out_channels=64, kernel_size=3, padding=1),
+            nn.Conv3d(1, 64, kernel_size=(3,3,3), padding=(1,1,1)),
             nn.ReLU(True),
-            nn.MaxPool3d(kernel_size=(2, 2, 2), stride=(2, 2, 2)),
-            nn.LSTM(input_size=64, hidden_size=128, num_layers=2, batch_first=True, bidirectional=True)
+            #nn.MaxPool3d(kernel_size=(2, 2, 2), stride=(2, 2, 2))
         )
         
-        # Bottleneck (will be completed soon)
-        
+        # Bottleneck (no further reduction of dimensions)
+
         # Decoder
         self.decoder = nn.Sequential(
-            nn.LSTM(input_size=256, hidden_size=128, num_layers=2, batch_first=True, bidirectional=True),
-            nn.ConvTranspose3d(in_channels=128, out_channels=50, kernel_size=3, padding=1),
+            nn.ConvTranspose3d(64, 1, kernel_size=(3,3,3), padding=(1,1,1)),
             nn.Sigmoid()
         )
 
+    def forward(self, x):
+        encoded = self.encoder(x)
+        decoded = self.decoder(encoded)
+        return decoded
 
+# Create your autoencoder model
+autoencoder = Autoencoder()
+
+
+
+class NetCDFDataset(Dataset):
+    def __init__(self, root_dir, transform=None):
+        self.root_dir = root_dir
+        self.file_list = [f for f in os.listdir(root_dir) if f.endswith('.nc')]
+
+    def __len__(self):
+        return len(self.file_list)
+
+    def __getitem__(self, idx):
+        file_path = os.path.join(self.root_dir, self.file_list[idx])
+        
+        # Load NetCDF data
+        dataset = nc.Dataset(file_path)
+        data = dataset.variables['t2m'][:].astype(np.float32)  # Adjust 'data' to the variable name in your file
+        dataset.close()
+        
+        # Reshape the data to (1, 50, 721, 1440)
+        data = data.reshape(1, 50, 721, 1440)
+        return torch.tensor(data)
+
+# Define your data directories
+gfs_biased_dir = 'GFS/'
+era5_unbiased_dir = 'ERA5/'
+
+batch_size = 1  # Adjust the batch size as needed
+shuffle = False
+num_workers = 0  # Adjust the number of workers for data loading
+
+# Create your autoencoder model
 autoencoder = Autoencoder()
 
 # Define the loss function and optimizer
 criterion = nn.MSELoss()
-optimizer = torch.optim.Adam(autoencoder.parameters(), lr=0.001)
+optimizer = torch.optim.Adam(autoencoder.parameters(), lr=0.01)
 
-# Training loop (you might want to use DataLoader for batch training)
+# Create data loaders for GFS (biased) and ERA5 (unbiased) data
+gfs_dataset = NetCDFDataset(root_dir=gfs_biased_dir)
+era5_dataset = NetCDFDataset(root_dir=era5_unbiased_dir)
+
+gfs_data_loader = DataLoader(gfs_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+era5_data_loader = DataLoader(era5_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+
+# Training loop
 num_epochs = 10
 for epoch in range(num_epochs):
-    optimizer.zero_grad()
-    outputs = autoencoder(biased_data)
-    loss = criterion(outputs, unbiased_data)
-    loss.backward()
-    optimizer.step()
+    autoencoder.train()
+    for gfs_data, era5_data in zip(gfs_data_loader, era5_data_loader):
+        optimizer.zero_grad()
+        outputs = autoencoder(gfs_data)
+        loss = criterion(outputs, era5_data)
+        loss.backward()
+        optimizer.step()
     print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.4f}')
 
 # Save the trained model
