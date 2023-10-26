@@ -5,8 +5,10 @@ import numpy as np
 import os
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
+from tqdm import tqdm
 
-
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("mps")
 
 class Autoencoder(nn.Module):
     def __init__(self):
@@ -61,12 +63,15 @@ class NetCDFDataset(Dataset):
 gfs_biased_dir = 'GFS/'
 era5_unbiased_dir = 'ERA5/'
 
-batch_size = 1  # Adjust the batch size as needed
+batch_size = 1  # Adjust batch size as needed
 shuffle = False
 num_workers = 0  # Adjust the number of workers for data loading
+seed = 42  # Your desired seed value
+torch.manual_seed(seed)
+
 
 # Create your autoencoder model
-autoencoder = Autoencoder()
+autoencoder = Autoencoder().to(device)
 
 # Define the loss function and optimizer
 criterion = nn.MSELoss()
@@ -79,17 +84,26 @@ era5_dataset = NetCDFDataset(root_dir=era5_unbiased_dir)
 gfs_data_loader = DataLoader(gfs_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 era5_data_loader = DataLoader(era5_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 
-# Training loop
+# Training loop with tqdm
 num_epochs = 10
 for epoch in range(num_epochs):
     autoencoder.train()
-    for gfs_data, era5_data in zip(gfs_data_loader, era5_data_loader):
+    total_loss = 0.0
+    
+    # Wrap the DataLoader with tqdm for a progress bar
+    for gfs_data, era5_data in tqdm(zip(gfs_data_loader, era5_data_loader), desc=f'Epoch [{epoch+1}/{num_epochs}]'):
         optimizer.zero_grad()
-        outputs = autoencoder(gfs_data)
-        loss = criterion(outputs, era5_data)
+        outputs = autoencoder(gfs_data.to(device))
+        loss = criterion(outputs, era5_data.to(device))
         loss.backward()
         optimizer.step()
-    print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.4f}')
+        
+        total_loss += loss.item()
+    
+    # Calculate and print the average loss for the epoch
+    avg_loss = total_loss / len(gfs_data_loader)
+    print(f'Epoch [{epoch+1}/{num_epochs}], Average Loss: {avg_loss:.4f}')
 
 # Save the trained model
 torch.save(autoencoder.state_dict(), 'autoencoder_model.pth')
+
