@@ -34,8 +34,9 @@ class Autoencoder(nn.Module):
         decoded = self.decoder(encoded)
         return decoded
 
-# Create your autoencoder model
-autoencoder = Autoencoder()
+# Create autoencoder model
+autoencoder = Autoencoder().to(device)
+
 if torch.cuda.device_count() > 1:
     print("Using", torch.cuda.device_count(), "GPUs!")
     autoencoder = nn.DataParallel(autoencoder)
@@ -65,15 +66,11 @@ class NetCDFDataset(Dataset):
 gfs_biased_dir = 'GFS/'
 era5_unbiased_dir = 'ERA5/'
 
-batch_size = 1  # Adjust batch size as needed
+batch_size = 2  # Adjust batch size as needed
 shuffle = False
 num_workers = 0  # Adjust the number of workers for data loading
 seed = 42  # Your desired seed value
 torch.manual_seed(seed)
-
-
-# Create your autoencoder model
-autoencoder = Autoencoder().to(device)
 
 # Define the loss function and optimizer
 criterion = nn.MSELoss()
