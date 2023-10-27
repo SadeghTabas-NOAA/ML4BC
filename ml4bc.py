@@ -36,7 +36,9 @@ class Autoencoder(nn.Module):
 
 # Create your autoencoder model
 autoencoder = Autoencoder()
-
+if torch.cuda.device_count() > 1:
+    print("Using", torch.cuda.device_count(), "GPUs!")
+    autoencoder = nn.DataParallel(autoencoder)
 
 
 class NetCDFDataset(Dataset):
@@ -105,5 +107,5 @@ for epoch in range(num_epochs):
     print(f'Epoch [{epoch+1}/{num_epochs}], Average Loss: {avg_loss:.4f}')
 
 # Save the trained model
-torch.save(autoencoder.state_dict(), 'autoencoder_model.pth')
+torch.save(autoencoder.module.state_dict() if isinstance(autoencoder, nn.DataParallel) else autoencoder.state_dict(), 'autoencoder_model.pth')
 
