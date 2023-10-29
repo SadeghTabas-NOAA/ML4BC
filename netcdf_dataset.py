@@ -1,3 +1,14 @@
+'''
+Description: This script provides utilities, including:
+(i) NetCDFDataset class and  Provide functionalities for data processing, normalizing, rescaling, and making pytorch dataloader for both GFS and ERA5.
+(ii) check_missing_files: A function for checking missing files.
+(iii) calculate_mean_and_std: A function to calculate the mean and standard deviation of the training dataset which provides values for normalization and rescaling modules.
+    
+Author: Sadegh Sadeghi Tabas (sadegh.tabas@noaa.gov)
+Revision history:
+    -20231029: Sadegh Tabas, initial code
+'''
+
 import netCDF4 as nc
 import numpy as np
 import os
