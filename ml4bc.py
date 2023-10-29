@@ -1,3 +1,21 @@
+'''
+Description: Main code for calling the ML4BC Machine Learning model, an Autoencoder Conv3D model, which is developed and designed for 
+GFS 2m temperature bias correction. The model training inputs were prepared using preprocessing.py from GFS (biased) and ERA5 (unbiased) 
+data from 20210321 to 20231018 in every 6 hours. The data has 0.25-degree spatial resolution and 50 hourly timesteps (e.g., [721,1440,50]).
+
+In summary, this model provides functionalities, including:
+(i) autoencoder_model.py: Main model structure.
+(ii) netcdf_dataset.py: Provide functionalities for data processing, normalizing, rescaling and making pytorch dataloader for both GFS and ERA5.
+(iii) check_missing_files: A function for checking missing files.
+(iv) calculate_mean_and_std: A function to calculate mean and standard deviation of training dataset which provides values for normalization and rescaling modules.
+(v) ml4bc.py: Model Initiation, Training Loop, Module for Saving Model State
+(vi) ml4bc.ipynb: An example of the ML4BC modeling process.
+(vii) postprocessing.ipynb: A notebook for postprocessing including data sanity check, plotting, and data analysis.
+    
+Author: Sadegh Sadeghi Tabas (sadegh.tabas@noaa.gov)
+Revision history:
+    -20231029: Sadegh Tabas, initial code
+'''
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
