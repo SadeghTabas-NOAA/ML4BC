@@ -1,5 +1,5 @@
 '''
-Description: This script provide the main autoencoder model structure that is used for GFS 2m temperature bias correction task.
+Description: This script provides the main autoencoder model structure that is used for GFS 2m temperature bias correction task.
     
 Author: Sadegh Sadeghi Tabas (sadegh.tabas@noaa.gov)
 Revision history:
