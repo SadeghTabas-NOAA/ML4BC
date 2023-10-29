@@ -4,13 +4,15 @@ GFS 2m temperature bias correction. The model training inputs were prepared usin
 data from 20210321 to 20231018 in every 6 hours. The data has 0.25-degree spatial resolution and 50 hourly timesteps (e.g., [721,1440,50]).
 
 In summary, this model provides functionalities, including:
-(i) autoencoder_model.py: Main model structure.
-(ii) netcdf_dataset.py: Provide functionalities for data processing, normalizing, rescaling and making pytorch dataloader for both GFS and ERA5.
-(iii) check_missing_files: A function for checking missing files.
-(iv) calculate_mean_and_std: A function to calculate mean and standard deviation of training dataset which provides values for normalization and rescaling modules.
-(v) ml4bc.py: Model Initiation, Training Loop, Module for Saving Model State
-(vi) ml4bc.ipynb: An example of the ML4BC modeling process.
-(vii) postprocessing.ipynb: A notebook for postprocessing including data sanity check, plotting, and data analysis.
+(i) preprocessing.py: a utility for preparing ML4BC model inputs from 0.25-degree resolution GFS and ERA5 data. This Python utility has
+two modules one for GFS info and the second one for era5 info. 
+(ii) autoencoder_model.py: Main model structure.
+(iii) netcdf_dataset.py: Provide functionalities for data processing, normalizing, rescaling and making pytorch dataloader for both GFS and ERA5.
+(iv) check_missing_files: A function for checking missing files.
+(v) calculate_mean_and_std: A function to calculate mean and standard deviation of training dataset which provides values for normalization and rescaling modules.
+(vi) ml4bc.py: Model Initiation, Training Loop, Module for Saving Model State
+(vii) ml4bc.ipynb: An example of the ML4BC modeling process.
+(iix) postprocessing.ipynb: A notebook for postprocessing including data sanity check, plotting, and data analysis.
     
 Author: Sadegh Sadeghi Tabas (sadegh.tabas@noaa.gov)
 Revision history:
