@@ -1,3 +1,11 @@
+'''
+Description: This script provide the main autoencoder model structure that is used for GFS 2m temperature bias correction task.
+    
+Author: Sadegh Sadeghi Tabas (sadegh.tabas@noaa.gov)
+Revision history:
+    -20231029: Sadegh Tabas, initial code
+'''
+
 import torch
 import torch.nn as nn
 
