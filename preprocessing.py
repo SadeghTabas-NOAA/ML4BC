@@ -1,5 +1,5 @@
 '''
-Description: a utility for preparing ML4BC model inputs from 0.25-degree resolution GFS and ERA5 data. This Python utility have
+Description: a utility for preparing ML4BC model inputs from 0.25-degree resolution GFS and ERA5 data. This Python utility has
 two modules one for GFS info and the second one for era5 info. 
 At this stage, we are going to train the ML4BC model for 2m temperature forecasts with spatial and temporal resolutions of 0.25 degrees
 and hourly, respectively. In summary, this utility provides functionalities including:
