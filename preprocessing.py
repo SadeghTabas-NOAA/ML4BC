@@ -259,7 +259,7 @@ if __name__ == "__main__":
     download_directory = args.download
     keep_downloaded_data = args.keep
     
-    GFS_variables_with_levels = {
+    gfs_variables_with_levels = {
     '2 metre temperature': 850,  # Example: Replace with the desired variable and its level
     'another_variable_name': 700,  # Another example
     # Add more variables with their specific levels here
