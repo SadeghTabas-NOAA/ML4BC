@@ -103,32 +103,33 @@ class DataProcessor:
                     # Specify the variable and level you want to extract
                     # variable_name = '2 metre temperature'
                     mergeDAs = []
-                    for variable_name, level_type_info in self.gfs_vars.items():
-                        levelType = level_type_info['typeOfLevel']
-                        desired_level = level_type_info['level']
-                        
-                        # Find the matching grib message
-                        variable_message = grbs.select(name=variable_name, typeOfLevel=levelType, level=desired_level)
-                        
-                        # create a netcdf dataset using the matching grib message
-                        lats, lons = variable_message.latlons()
-                        lats = lats[:,0]
-                        lons = lons[0,:]
-                        data = variable_message.values
-                        steps = variable_message.validDate
-                        varName = f'{variable_name}_{levelType}_{desired_level}'
-                        da = xr.Dataset(
-                            data_vars={
-                                varName: (['latitude', 'longitude'], data)
-                            },
-                            coords={
-                                'longitude': lons,
-                                'latitude': lats,
-                                'time': steps,  
-                            }
-                        )
-                        da[varName] = da[varName].astype('float32')
-                        mergeDAs.append(da)
+                    for variable_name in self.gfs_vars:
+                        for level_type_info in self.gfs_vars[variable_name]:
+                            levelType = level_type_info['typeOfLevel']
+                            desired_level = level_type_info['level']
+                            
+                            # Find the matching grib message
+                            variable_message = grbs.select(name=variable_name, typeOfLevel=levelType, level=desired_level)
+                            
+                            # create a netcdf dataset using the matching grib message
+                            lats, lons = variable_message.latlons()
+                            lats = lats[:,0]
+                            lons = lons[0,:]
+                            data = variable_message.values
+                            steps = variable_message.validDate
+                            varName = f'{variable_message.shortName}_{levelType}_{desired_level}'
+                            da = xr.Dataset(
+                                data_vars={
+                                    varName: (['latitude', 'longitude'], data)
+                                },
+                                coords={
+                                    'longitude': lons,
+                                    'latitude': lats,
+                                    'time': steps,  
+                                }
+                            )
+                            da[varName] = da[varName].astype('float32')
+                            mergeDAs.append(da)
                         
                     ds = xr.merge(mergeDAs)
                     ds['latitude'] = ds['latitude'].astype('float32')
@@ -261,10 +262,16 @@ if __name__ == "__main__":
     keep_downloaded_data = args.keep
     
     gfs_variables_with_levels = {
-    '2 metre temperature': {'typeOfLevel': 'isobaricInhPa', 'level': 850,},
-    'another_variable_name': {'level': 700, 'typeOfLevel': 'isobaricInhPa'},
-    # Add more variables with their specific levels and types here
-}
+        '2 metre temperature': [{'typeOfLevel': 'heightAboveGround', 'level': 2}],
+        'Temperature': [{'typeOfLevel': 'isobaricInhPa', 'level': 1000},{'typeOfLevel': 'surface', 'level': 0}],
+        'Relative humidity': [{'typeOfLevel': 'isobaricInhPa', 'level': 1000}],
+        'Pressure reduced to MSL': [{'typeOfLevel': 'meanSea', 'level': 0}],
+        '10 metre U wind component': [{'typeOfLevel': 'heightAboveGround', 'level': 10}],
+        '10 metre V wind component': [{'typeOfLevel': 'heightAboveGround', 'level': 10}],
+        'Soil temperature': [{'typeOfLevel': 'depthBelowLandLayer', 'level': 0}],
+        'Land-sea mask': [{'typeOfLevel': 'surface', 'level': 0}],
+        'Liquid volumetric soil moisture (non-frozen)': [{'typeOfLevel': 'depthBelowLandLayer', 'level': 0}],
+    }
     
     data_processor = DataProcessor(start_date, end_date, output_directory, download_directory, keep_downloaded_data, gfs_variables_with_levels)      
     if not args.process or "era5" in args.process:
