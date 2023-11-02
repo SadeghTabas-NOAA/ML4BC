@@ -35,7 +35,7 @@ class DataProcessor:
         self.keep_downloaded_data = keep_downloaded_data
         self.output_gfs = None
         self.output_era5 = None
-        
+        self.gfs_vars = None
         # Specify the output directory where you want to save the files
         if self.output_directory is None:
             self.output_directory= os.getcwd()
@@ -51,7 +51,9 @@ class DataProcessor:
         self.cds = cdsapi.Client()
 
 
-    def gfs_process(self):
+    def gfs_process(self, GFS_variables_with_levels):
+        self.gfs_vars = GFS_variables_with_levels
+        
         # Specify the local directory where you want to save the GFS files
         if self.download_directory is None:
             self.local_base_directory = os.path.join(os.getcwd(), 'noaa-gfs-bdp-pds-data')  # Use the current directory if not specified
@@ -77,7 +79,7 @@ class DataProcessor:
             s3_objects = self.s3.list_objects_v2(Bucket=self.bucket_name, Prefix=s3_prefix)
             
             # Filter objects based on the desired formats
-            mergedDSs = []
+            mergeDSs = []
             for obj in s3_objects.get('Contents', []):
                 obj_key = obj['Key']
                 if fnmatch.fnmatch(obj_key, f'*.pgrb2.0p25.f0[0-4][0-9]'):
@@ -101,35 +103,40 @@ class DataProcessor:
                     grbs = pygrib.open(local_file_path)
                     
                     # Specify the variable and level you want to extract
-                    variable_name = '2 metre temperature'
-        
-                    # Find the matching grib message
-                    variable_message = grbs.select(name=variable_name)[0]
-
-                    # create a netcdf dataset using the matching grib message
-                    lats, lons = variable_message.latlons()
-                    lats = lats[:,0]
-                    lons = lons[0,:]
-                    data = variable_message.values
-                    steps = variable_message.validDate
-
-                    ds = xr.Dataset(
-                        data_vars={
-                            't2m': (['latitude', 'longitude'], data)
-                        },
-                        coords={
-                            'longitude': lons,
-                            'latitude': lats,
-                            'time': steps,  
-                        }
-                    )
+                    # variable_name = '2 metre temperature'
+                    mergeDAs = []
+                    for variable_name, desired_level in self.gfs_vars.items():
+                        # Find the matching grib message
+                        variable_message = grbs.select(name=variable_name, level=desired_level)
+                        
+                        # create a netcdf dataset using the matching grib message
+                        lats, lons = variable_message.latlons()
+                        lats = lats[:,0]
+                        lons = lons[0,:]
+                        data = variable_message.values
+                        steps = variable_message.validDate
+                        varName = f'{variable_name}_{desired_level}'
+                        da = xr.Dataset(
+                            data_vars={
+                                varName: (['latitude', 'longitude'], data)
+                            },
+                            coords={
+                                'longitude': lons,
+                                'latitude': lats,
+                                'time': steps,  
+                            }
+                        )
+                        da[varName] = da[varName].astype('float32')
+                        mergeDAs.append(da)
+                        
+                    ds = xr.merge(mergeDAs)
                     ds['latitude'] = ds['latitude'].astype('float32')
                     ds['longitude'] = ds['longitude'].astype('float32')
-                    ds['t2m'] = ds['t2m'].astype('float32')
-                    mergedDSs.append(ds)
                     
-            # final_dataset = xr.merge(mergedDSs)
-            final_dataset = xr.concat(mergedDSs, dim='time')
+                    mergeDSs.append(ds)
+                    
+            # final_dataset = xr.merge(mergeDSs)
+            final_dataset = xr.concat(mergeDSs, dim='time')
             
             # Define the output NetCDF file name
             output_file_name = f'GFS.t2m.{current_datetime.strftime("%Y%m%d%H")}.nc'
@@ -251,10 +258,16 @@ if __name__ == "__main__":
     output_directory = args.output
     download_directory = args.download
     keep_downloaded_data = args.keep
-
+    
+    GFS_variables_with_levels = {
+    '2 metre temperature': 850,  # Example: Replace with the desired variable and its level
+    'another_variable_name': 700,  # Another example
+    # Add more variables with their specific levels here
+    }
+    
     data_processor = DataProcessor(start_date, end_date, output_directory, download_directory, keep_downloaded_data)      
     if not args.process or "era5" in args.process:
         data_processor.era5_process()
     if not args.process or "gfs" in args.process:
-        data_processor.gfs_process()
+        data_processor.gfs_process(GFS_variables_with_levels)
 
