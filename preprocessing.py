@@ -90,9 +90,13 @@ class DataProcessor:
                     # Define the local file path
                     local_file_path = os.path.join(local_directory, os.path.basename(obj_key))
 
-                    # Download the file from S3 to the local path
-                    self.s3.download_file(self.bucket_name, obj_key, local_file_path)
-                    print(f"Downloaded {obj_key} to {local_file_path}")
+                    # Check if the file exited on the disk
+                    if os.path.exists(local_file_path):
+                        print(f"The file at {local_file_path} exists.")
+                    else:
+                        # Download the file from S3 to the local path
+                        self.s3.download_file(self.bucket_name, obj_key, local_file_path)
+                        print(f"Downloaded {obj_key} to {local_file_path}")
 
                     grbs = pygrib.open(local_file_path)
                     
@@ -171,30 +175,37 @@ class DataProcessor:
 
             # Define the local file path
             local_file_path = os.path.join(local_directory, era5_filename)
-            print ('Start Downloading ERA5 t2m Data from', str(current_date), 'to', str(current_end))
             
-            self.cds.retrieve(
-                'reanalysis-era5-single-levels',
-                {
-                    'product_type': 'reanalysis',
-                    'variable': '2m_temperature',
-                    'grid': '0.25/0.25',
-                    'date': f'{current_date}/{current_end}',
-                    'time': [
-                        '00:00', '01:00', '02:00',
-                        '03:00', '04:00', '05:00',
-                        '06:00', '07:00', '08:00',
-                        '09:00', '10:00', '11:00',
-                        '12:00', '13:00', '14:00',
-                        '15:00', '16:00', '17:00',
-                        '18:00', '19:00', '20:00',
-                        '21:00', '22:00', '23:00',
-                    ],
-                    'format': 'netcdf',
-                },
-                f'{local_file_path}')
+            # Check if the file exited on the disk
+            if os.path.exists(local_file_path):
+                print(f"The file at {local_file_path} exists.")
+            else:
+                # Download the file from S3 to the local path
+                self.s3.download_file(self.bucket_name, obj_key, local_file_path)
+                print ('Start Downloading ERA5 t2m Data from', str(current_date), 'to', str(current_end))
             
-            print ('ERA5 t2m Data Downloading Completed')
+                self.cds.retrieve(
+                    'reanalysis-era5-single-levels',
+                    {
+                        'product_type': 'reanalysis',
+                        'variable': '2m_temperature',
+                        'grid': '0.25/0.25',
+                        'date': f'{current_date}/{current_end}',
+                        'time': [
+                            '00:00', '01:00', '02:00',
+                            '03:00', '04:00', '05:00',
+                            '06:00', '07:00', '08:00',
+                            '09:00', '10:00', '11:00',
+                            '12:00', '13:00', '14:00',
+                            '15:00', '16:00', '17:00',
+                            '18:00', '19:00', '20:00',
+                            '21:00', '22:00', '23:00',
+                        ],
+                        'format': 'netcdf',
+                    },
+                    f'{local_file_path}')
+                
+                print ('ERA5 t2m Data Downloading Completed')
             
             for hour in [0, 6, 12, 18]:
                 # Combine the date and time to create a new datetime object
