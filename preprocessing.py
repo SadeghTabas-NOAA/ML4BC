@@ -103,9 +103,12 @@ class DataProcessor:
                     # Specify the variable and level you want to extract
                     # variable_name = '2 metre temperature'
                     mergeDAs = []
-                    for variable_name, desired_level in self.gfs_vars.items():
+                    for variable_name, level_type_info in self.gfs_vars.items():
+                        levelType = level_type_info['typeOfLevel']
+                        desired_level = level_type_info['level']
+                        
                         # Find the matching grib message
-                        variable_message = grbs.select(name=variable_name, level=desired_level)
+                        variable_message = grbs.select(name=variable_name, typeOfLevel=levelType, level=desired_level)
                         
                         # create a netcdf dataset using the matching grib message
                         lats, lons = variable_message.latlons()
@@ -113,7 +116,7 @@ class DataProcessor:
                         lons = lons[0,:]
                         data = variable_message.values
                         steps = variable_message.validDate
-                        varName = f'{variable_name}_{desired_level}'
+                        varName = f'{variable_name}_{levelType}_{desired_level}'
                         da = xr.Dataset(
                             data_vars={
                                 varName: (['latitude', 'longitude'], data)
@@ -258,10 +261,10 @@ if __name__ == "__main__":
     keep_downloaded_data = args.keep
     
     gfs_variables_with_levels = {
-    '2 metre temperature': 850,  # Example: Replace with the desired variable and its level
-    'another_variable_name': 700,  # Another example
-    # Add more variables with their specific levels here
-    }
+    '2 metre temperature': {'typeOfLevel': 'isobaricInhPa', 'level': 850,},
+    'another_variable_name': {'level': 700, 'typeOfLevel': 'isobaricInhPa'},
+    # Add more variables with their specific levels and types here
+}
     
     data_processor = DataProcessor(start_date, end_date, output_directory, download_directory, keep_downloaded_data, gfs_variables_with_levels)      
     if not args.process or "era5" in args.process:
