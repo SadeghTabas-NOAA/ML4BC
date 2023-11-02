@@ -27,7 +27,7 @@ import pygrib
 import cdsapi
 
 class DataProcessor:
-    def __init__(self, start_date, end_date, output_directory=None, download_directory=None, keep_downloaded_data=False, gfs_variables_with_levels=None):
+    def __init__(self, start_date, end_date, output_directory=None, download_directory=None, keep_downloaded_data=False, gfs_variables_with_levels):
         self.start_date = start_date
         self.end_date = end_date
         self.output_directory = output_directory
