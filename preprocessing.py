@@ -27,7 +27,7 @@ import pygrib
 import cdsapi
 
 class DataProcessor:
-    def __init__(self, start_date, end_date, output_directory=None, download_directory=None, keep_downloaded_data=False, GFS_variables_with_levels=None):
+    def __init__(self, start_date, end_date, output_directory=None, download_directory=None, keep_downloaded_data=False, gfs_variables_with_levels=None):
         self.start_date = start_date
         self.end_date = end_date
         self.output_directory = output_directory
@@ -35,7 +35,7 @@ class DataProcessor:
         self.keep_downloaded_data = keep_downloaded_data
         self.output_gfs = None
         self.output_era5 = None
-        self.gfs_vars = GFS_variables_with_levels
+        self.gfs_vars = gfs_variables_with_levels
         # Specify the output directory where you want to save the files
         if self.output_directory is None:
             self.output_directory= os.getcwd()
@@ -263,7 +263,7 @@ if __name__ == "__main__":
     # Add more variables with their specific levels here
     }
     
-    data_processor = DataProcessor(start_date, end_date, output_directory, download_directory, keep_downloaded_data, GFS_variables_with_levels)      
+    data_processor = DataProcessor(start_date, end_date, output_directory, download_directory, keep_downloaded_data, gfs_variables_with_levels)      
     if not args.process or "era5" in args.process:
         data_processor.era5_process()
     if not args.process or "gfs" in args.process:
