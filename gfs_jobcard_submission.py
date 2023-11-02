@@ -24,7 +24,7 @@ conda activate ml4bc
 cd /lustre/ML4BC
 
 # Run the Python script
-python3 preprocessing.py {start} {end} -p gfs -o /contrib/$USER/ML4BC/
+python3 preprocessing.py {start} {end} -p gfs -k -o /contrib/$USER/ML4BC/
 """
 
 # Generate and submit job cards
