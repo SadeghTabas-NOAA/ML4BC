@@ -27,7 +27,7 @@ import pygrib
 import cdsapi
 
 class DataProcessor:
-    def __init__(self, start_date, end_date, output_directory=None, download_directory=None, keep_downloaded_data=False, gfs_variables_with_levels):
+    def __init__(self, start_date, end_date, gfs_variables_with_levels, output_directory=None, download_directory=None, keep_downloaded_data=False):
         self.start_date = start_date
         self.end_date = end_date
         self.output_directory = output_directory
@@ -273,7 +273,7 @@ if __name__ == "__main__":
         'Liquid volumetric soil moisture (non-frozen)': [{'typeOfLevel': 'depthBelowLandLayer', 'level': 0}],
     }
     
-    data_processor = DataProcessor(start_date, end_date, output_directory, download_directory, keep_downloaded_data, gfs_variables_with_levels)      
+    data_processor = DataProcessor(start_date, end_date, gfs_variables_with_levels, output_directory, download_directory, keep_downloaded_data)      
     if not args.process or "era5" in args.process:
         data_processor.era5_process()
     if not args.process or "gfs" in args.process:
