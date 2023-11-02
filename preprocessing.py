@@ -109,7 +109,7 @@ class DataProcessor:
                             desired_level = level_type_info['level']
                             
                             # Find the matching grib message
-                            variable_message = grbs.select(name=variable_name, typeOfLevel=levelType, level=desired_level)
+                            variable_message = grbs.select(name=variable_name, typeOfLevel=levelType, level=desired_level)[0]
                             
                             # create a netcdf dataset using the matching grib message
                             lats, lons = variable_message.latlons()
