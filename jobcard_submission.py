@@ -5,12 +5,12 @@ from datetime import datetime, timedelta
 start_date = datetime(2021, 3, 23)
 end_date = datetime(2023, 10, 31)
 delta = timedelta(days=10)  # Interval of 10 days
-
+process = 'gfs'
 # Template of the job card
 job_card_template = """#!/bin/bash
-#SBATCH -J gfs_process
-#SBATCH -o gfs_output_{start}_{end}.out
-#SBATCH -e gfs_err_{start}_{end}.err
+#SBATCH -J {process}_process
+#SBATCH -o {process}_output_{start}_{end}.out
+#SBATCH -e {process}_err_{start}_{end}.err
 #SBATCH -N 1
 #SBATCH -t 30-00:00:00  # 1 month (30 days)
 
@@ -24,7 +24,7 @@ conda activate ml4bc
 cd /lustre/ML4BC
 
 # Run the Python script
-python3 preprocessing.py {start} {end} -p gfs -k -o /contrib/$USER/ML4BC/
+python3 gen_training_1.0d.py {start} {end} -p {process} -k -o /contrib/$USER/ML4BC/
 """
 
 # Generate and submit job cards
