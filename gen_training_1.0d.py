@@ -44,6 +44,7 @@ class DataProcessor:
         self.s3 = boto3.client('s3', config=Config(signature_version=UNSIGNED))
 
         # Specify the S3 bucket name and root directory for GFS forecasts
+        self.paginator = s3.get_paginator('list_objects_v2')
         self.bucket_name = 'noaa-gfs-bdp-pds'
         self.root_directory = 'gfs'
 
@@ -74,68 +75,69 @@ class DataProcessor:
             s3_prefix = f"{self.root_directory}.{date_str}/{time_str}/{'atmos'}/{'gfs'}"
 
             # List objects in the S3 directory
-            s3_objects = self.s3.list_objects_v2(Bucket=self.bucket_name, Prefix=s3_prefix)
+            s3_objects = self.paginator.paginate(Bucket=self.bucket_name, Prefix=s3_prefix)
             
             # Filter objects based on the desired formats
             mergeDSs = []
-            for obj in s3_objects.get('Contents', []):
-                obj_key = obj['Key']
-                if fnmatch.fnmatch(obj_key, f'*.pgrb2.1p00.f[0-9][0-9][0-9]'):
-                    # Define the local directory path where the file will be saved
-                    local_directory = os.path.join(self.local_base_directory, date_str, time_str)
-
-                    # Create the local directory if it doesn't exist
-                    os.makedirs(local_directory, exist_ok=True)
-
-                    # Define the local file path
-                    local_file_path = os.path.join(local_directory, os.path.basename(obj_key))
-
-                    # Check if the file exited on the disk
-                    if os.path.exists(local_file_path):
-                        print(f"The file at {local_file_path} exists.")
-                    else:
-                        # Download the file from S3 to the local path
-                        self.s3.download_file(self.bucket_name, obj_key, local_file_path)
-                        print(f"Downloaded {obj_key} to {local_file_path}")
-
-                    grbs = pygrib.open(local_file_path)
-                    
-                    # Specify the variable and level you want to extract
-                    # variable_name = '2 metre temperature'
-                    mergeDAs = []
-                    for variable_name in self.gfs_vars:
-                        for level_type_info in self.gfs_vars[variable_name]:
-                            levelType = level_type_info['typeOfLevel']
-                            desired_level = level_type_info['level']
-                            
-                            # Find the matching grib message
-                            variable_message = grbs.select(name=variable_name, typeOfLevel=levelType, level=desired_level)[0]
-                            
-                            # create a netcdf dataset using the matching grib message
-                            lats, lons = variable_message.latlons()
-                            lats = lats[:,0]
-                            lons = lons[0,:]
-                            data = variable_message.values
-                            steps = variable_message.validDate
-                            varName = f'{variable_message.shortName}_{levelType}_{desired_level}'
-                            da = xr.Dataset(
-                                data_vars={
-                                    varName: (['latitude', 'longitude'], data)
-                                },
-                                coords={
-                                    'longitude': lons,
-                                    'latitude': lats,
-                                    'time': steps,  
-                                }
-                            )
-                            da[varName] = da[varName].astype('float32')
-                            mergeDAs.append(da)
+            for page in s3_objects:
+                for obj in page['Contents']:
+                    obj_key = obj['Key']
+                    if fnmatch.fnmatch(obj_key, f'*.pgrb2.1p00.f[0-9][0-9][0-9]'):
+                        # Define the local directory path where the file will be saved
+                        local_directory = os.path.join(self.local_base_directory, date_str, time_str)
+    
+                        # Create the local directory if it doesn't exist
+                        os.makedirs(local_directory, exist_ok=True)
+    
+                        # Define the local file path
+                        local_file_path = os.path.join(local_directory, os.path.basename(obj_key))
+    
+                        # Check if the file exited on the disk
+                        if os.path.exists(local_file_path):
+                            print(f"The file at {local_file_path} exists.")
+                        else:
+                            # Download the file from S3 to the local path
+                            self.s3.download_file(self.bucket_name, obj_key, local_file_path)
+                            print(f"Downloaded {obj_key} to {local_file_path}")
+    
+                        grbs = pygrib.open(local_file_path)
                         
-                    ds = xr.merge(mergeDAs)
-                    ds['latitude'] = ds['latitude'].astype('float32')
-                    ds['longitude'] = ds['longitude'].astype('float32')
-                    
-                    mergeDSs.append(ds)
+                        # Specify the variable and level you want to extract
+                        # variable_name = '2 metre temperature'
+                        mergeDAs = []
+                        for variable_name in self.gfs_vars:
+                            for level_type_info in self.gfs_vars[variable_name]:
+                                levelType = level_type_info['typeOfLevel']
+                                desired_level = level_type_info['level']
+                                
+                                # Find the matching grib message
+                                variable_message = grbs.select(name=variable_name, typeOfLevel=levelType, level=desired_level)[0]
+                                
+                                # create a netcdf dataset using the matching grib message
+                                lats, lons = variable_message.latlons()
+                                lats = lats[:,0]
+                                lons = lons[0,:]
+                                data = variable_message.values
+                                steps = variable_message.validDate
+                                varName = f'{variable_message.shortName}_{levelType}_{desired_level}'
+                                da = xr.Dataset(
+                                    data_vars={
+                                        varName: (['latitude', 'longitude'], data)
+                                    },
+                                    coords={
+                                        'longitude': lons,
+                                        'latitude': lats,
+                                        'time': steps,  
+                                    }
+                                )
+                                da[varName] = da[varName].astype('float32')
+                                mergeDAs.append(da)
+                            
+                        ds = xr.merge(mergeDAs)
+                        ds['latitude'] = ds['latitude'].astype('float32')
+                        ds['longitude'] = ds['longitude'].astype('float32')
+                        
+                        mergeDSs.append(ds)
                     
             # final_dataset = xr.merge(mergeDSs)
             final_dataset = xr.concat(mergeDSs, dim='time')
