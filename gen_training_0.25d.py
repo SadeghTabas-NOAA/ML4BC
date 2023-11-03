@@ -268,7 +268,7 @@ if __name__ == "__main__":
         'Pressure reduced to MSL': [{'typeOfLevel': 'meanSea', 'level': 0}],
         '10 metre U wind component': [{'typeOfLevel': 'heightAboveGround', 'level': 10}],
         '10 metre V wind component': [{'typeOfLevel': 'heightAboveGround', 'level': 10}],
-        'Soil temperature': [{'typeOfLevel': 'depthBelowLandLayer', 'level': 0}],
+        'Soil Temperature': [{'typeOfLevel': 'depthBelowLandLayer', 'level': 0}],
         'Land-sea mask': [{'typeOfLevel': 'surface', 'level': 0}],
         'Liquid volumetric soil moisture (non-frozen)': [{'typeOfLevel': 'depthBelowLandLayer', 'level': 0}],
     }
