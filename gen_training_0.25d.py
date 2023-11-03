@@ -141,7 +141,7 @@ class DataProcessor:
             final_dataset = xr.concat(mergeDSs, dim='time')
             
             # Define the output NetCDF file name
-            output_file_name = f'GFS.t2m.{current_datetime.strftime("%Y%m%d%H")}.nc'
+            output_file_name = f'GFS.{current_datetime.strftime("%Y%m%d%H")}.nc'
             output_file_path = os.path.join(self.output_gfs, output_file_name)
             final_dataset.to_netcdf(output_file_path)
             print(f"Saved the dataset to {output_file_path}")
@@ -227,7 +227,7 @@ class DataProcessor:
                 sliced_ds = current_ds.sel(time=slice(frame_start, frame_end))
 
                 # Define the output NetCDF file name
-                output_file_name = f'ERA5.t2m.{frame_start.strftime("%Y%m%d%H")}.nc'
+                output_file_name = f'ERA5.{frame_start.strftime("%Y%m%d%H")}.nc'
                 output_file_path = os.path.join(self.output_era5, output_file_name)
                 sliced_ds.to_netcdf(output_file_path)
                 print(f"Saved the dataset to {output_file_path}")
