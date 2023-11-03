@@ -198,7 +198,7 @@ class DataProcessor:
                     {
                         'product_type': 'reanalysis',
                         'variable': '2m_temperature',
-                        'grid': '1/1',
+                        'grid': '1.0/1.0',
                         'date': f'{current_date}/{current_end}',
                         'time': [
                             '00:00', #'01:00', '02:00',
