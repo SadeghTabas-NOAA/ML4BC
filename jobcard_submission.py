@@ -32,7 +32,7 @@ python3 gen_training_{resolution}d.py {start} {end} -p {process} -k -o /contrib/
 # Generate and submit job cards
 while start_date < end_date:
     next_date = start_date + delta
-    job_card = job_card_template.format(start=start_date.strftime("%Y%m%d"), end=next_date.strftime("%Y%m%d"))
+    job_card = job_card_template.format(process=process, start=start_date.strftime("%Y%m%d"), end=next_date.strftime("%Y%m%d"), resolution=resolution)
     
     # Write the job card to a file
     job_filename = f"job_{start_date.strftime('%Y%m%d')}_{next_date.strftime('%Y%m%d')}.sh"
