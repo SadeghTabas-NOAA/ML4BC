@@ -35,7 +35,7 @@ while start_date < end_date:
     job_card = job_card_template.format(process=process, start=start_date.strftime("%Y%m%d"), end=next_date.strftime("%Y%m%d"), resolution=resolution)
     
     # Write the job card to a file
-    job_filename = f"job_{start_date.strftime('%Y%m%d')}_{next_date.strftime('%Y%m%d')}.sh"
+    job_filename = f"{process}_job_{start_date.strftime('%Y%m%d')}_{next_date.strftime('%Y%m%d')}.sh"
     with open(job_filename, 'w') as job_file:
         job_file.write(job_card)
     
