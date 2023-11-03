@@ -80,7 +80,7 @@ class DataProcessor:
             mergeDSs = []
             for obj in s3_objects.get('Contents', []):
                 obj_key = obj['Key']
-                if fnmatch.fnmatch(obj_key, f'*.pgrb2.1p00.f[0-9][0-4][0-9]'):
+                if fnmatch.fnmatch(obj_key, f'*.pgrb2.1p00.f[0-9][0-9][0-9]'):
                     # Define the local directory path where the file will be saved
                     local_directory = os.path.join(self.local_base_directory, date_str, time_str)
 
@@ -179,7 +179,7 @@ class DataProcessor:
             local_directory = self.local_base_directory
             
             current_date = current_datetime.date()
-            current_end = current_date + timedelta(days=3)
+            current_end = current_date + timedelta(days=7)
             era5_filename = 'ERA5_t2m_'+str(current_date)+'_to_'+str(current_end)+'.nc'
 
             # Define the local file path
@@ -219,7 +219,7 @@ class DataProcessor:
             for hour in [0, 6, 12, 18]:
                 # Combine the date and time to create a new datetime object
                 frame_start = datetime.combine(current_date, time(hour,0,0))
-                frame_end = frame_start + timedelta(hours=49)
+                frame_end = frame_start + timedelta(hours=144)
                 
                 current_ds = xr.open_dataset(local_file_path)
                 
