@@ -190,7 +190,6 @@ class DataProcessor:
                 print(f"The file at {local_file_path} exists.")
             else:
                 # Download the file from S3 to the local path
-                self.s3.download_file(self.bucket_name, obj_key, local_file_path)
                 print ('Start Downloading ERA5 t2m Data from', str(current_date), 'to', str(current_end))
             
                 self.cds.retrieve(
