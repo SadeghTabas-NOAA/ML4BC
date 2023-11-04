@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 # Define the start and end dates
 start_date = datetime(2021, 3, 23)
 end_date = datetime(2023, 10, 31)
-delta = timedelta(days=10)  # Interval of 10 days
+delta = timedelta(days=7)  # Interval of 10 days
 process = 'gfs'
 resolution = '1.0'
 
