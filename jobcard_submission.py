@@ -30,7 +30,7 @@ python3 gen_training_{resolution}d.py {start} {end} -p {process} -k -o /contrib/
 """
 
 # Generate and submit job cards
-while start_date < end_date:
+while start_date <= end_date:
     next_date = start_date + delta
     job_card = job_card_template.format(process=process, start=start_date.strftime("%Y%m%d"), end=next_date.strftime("%Y%m%d"), resolution=resolution)
     
