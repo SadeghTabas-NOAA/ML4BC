@@ -181,7 +181,7 @@ class DataProcessor:
             local_directory = self.local_base_directory
             
             current_date = current_datetime.date()
-            current_end = current_date + timedelta(days=7)
+            current_end = current_date + timedelta(days=17)
             era5_filename = 'ERA5_t2m_'+str(current_date)+'_to_'+str(current_end)+'.nc'
 
             # Define the local file path
@@ -220,7 +220,7 @@ class DataProcessor:
             for hour in [0, 6, 12, 18]:
                 # Combine the date and time to create a new datetime object
                 frame_start = datetime.combine(current_date, time(hour,0,0))
-                frame_end = frame_start + timedelta(hours=144)
+                frame_end = frame_start + timedelta(hours=384)
                 
                 current_ds = xr.open_dataset(local_file_path)
                 
