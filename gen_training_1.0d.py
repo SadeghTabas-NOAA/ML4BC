@@ -220,7 +220,7 @@ class DataProcessor:
             for hour in [0, 6, 12, 18]:
                 # Combine the date and time to create a new datetime object
                 frame_start = datetime.combine(current_date, time(hour,0,0))
-                frame_end = frame_start + timedelta(hours=381)
+                frame_end = frame_start + timedelta(hours=384)
                 
                 current_ds = xr.open_dataset(local_file_path)
                 
