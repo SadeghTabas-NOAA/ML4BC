@@ -44,7 +44,7 @@ class DataProcessor:
         self.s3 = boto3.client('s3', config=Config(signature_version=UNSIGNED))
 
         # Specify the S3 bucket name and root directory for GFS forecasts
-        self.paginator = s3.get_paginator('list_objects_v2')
+        self.paginator = self.s3.get_paginator('list_objects_v2')
         self.bucket_name = 'noaa-gfs-bdp-pds'
         self.root_directory = 'gfs'
 
