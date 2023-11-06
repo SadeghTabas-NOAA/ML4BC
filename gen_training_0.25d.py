@@ -7,11 +7,12 @@ and hourly, respectively. In summary, this utility provides functionalities incl
 (ii)  Extract relevant variables from grib2 data
 (iii) Reshape, rename, and transform extracted data to the desired format
 (iv)  Merge the data through time with the desired number of forecast time steps and save it in NetCDF format
-(v)   Produce ERA5 and GFS 2m temperature for model training
+(v)   Produce ERA5 and GFS outputs for model training
 
 Author: Sadegh Sadeghi Tabas (sadegh.tabas@noaa.gov)
 Revision history:
     -20231019: Sadegh Tabas, initial code
+    -20231106: Sadegh Tabas, updated variables that need to be processed
 '''
 import os
 import boto3
