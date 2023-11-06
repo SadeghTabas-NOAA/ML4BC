@@ -1,17 +1,17 @@
 '''
-Description: a utility for preparing ML4BC model inputs from 1-degree resolution GFS and ERA5 data. This Python utility has
+Description: a utility for preparing ML4BC model inputs from 1.0-degree resolution GFS and ERA5 data. This Python utility has
 two modules one for GFS info and the second one for era5 info. 
-At this stage, we are going to train the ML4BC model for 2m temperature forecasts with spatial and temporal resolutions of 1-degree
+At this stage, we are going to train the ML4BC model for 2m temperature forecasts with spatial and temporal resolutions of 1.0 degrees
 and 3-hourly, respectively. In summary, this utility provides functionalities including:
-(i)   Downloading ECMWF's ERA5 and NOAA GFS 3-hourly forecasts,
+(i)   Downloading ECMWF's ERA5 and NOAA GFS hourly forecasts,
 (ii)  Extract relevant variables from grib2 data
 (iii) Reshape, rename, and transform extracted data to the desired format
 (iv)  Merge the data through time with the desired number of forecast time steps and save it in NetCDF format
-(v)   Produce ERA5 2m temperature and GFS forecast variables for model training
+(v)   Produce ERA5 and GFS outputs for model training
 
 Author: Sadegh Sadeghi Tabas (sadegh.tabas@noaa.gov)
 Revision history:
-    -20231103: Sadegh Tabas, initial code
+    -20231106: Sadegh Tabas, provided utility to process ERA5 and GFS 1.0 degree spatial, 3-hourly temporal and 16-day lead time info.
 '''
 import os
 import boto3
