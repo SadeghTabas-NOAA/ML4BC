@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 # Define the start and end dates
 start_date = datetime(2021, 3, 23)
 end_date = datetime(2023, 10, 31)
-delta = timedelta(days=7)  # Interval of 10 days
+delta = timedelta(days=5)  # Interval of 10 days
 process = 'gfs'
 resolution = '1.0'
 
@@ -26,7 +26,7 @@ conda activate ml4bc
 cd /lustre/ML4BC
 
 # Run the Python script
-python3 gen_training_{resolution}d.py {start} {end} -p {process} -k -o /contrib/$USER/ML4BC/
+python3 gen_training_{resolution}d.py {start} {end} -p {process} -o /contrib/$USER/ML4BC/
 """
 
 # Generate and submit job cards
