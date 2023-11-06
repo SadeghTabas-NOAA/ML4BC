@@ -42,4 +42,4 @@ while start_date <= end_date:
     # Submit the job
     os.system(f"sbatch {job_filename}")
     
-    start_date = next_date
+    start_date = next_date + timedelta(days=1) 
