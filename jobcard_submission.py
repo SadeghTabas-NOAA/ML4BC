@@ -1,3 +1,9 @@
+'''
+Description: a utility for creating and submitting job cards to run gen_training_X.Xd.py scripts in parallel.
+Author: Sadegh Sadeghi Tabas (sadegh.tabas@noaa.gov)
+Revision history:
+    -20231106: Sadegh Tabas, initial code
+'''
 import os
 from datetime import datetime, timedelta
 
