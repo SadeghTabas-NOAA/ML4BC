@@ -85,10 +85,10 @@ def check_missing_files(start_date, end_date, gfs_directory, era5_directory):
     while current_date <= end_date:
         date_str = current_date.strftime("%Y%m%d")
         for hour_str in ['00', '06', '12', '18']:
-            gfs_file_name = f"GFS.t2m.{date_str}{hour_str}.nc"
+            gfs_file_name = f"GFS.{date_str}{hour_str}.nc"
             gfs_file_path = os.path.join(gfs_directory, gfs_file_name)
 
-            era5_file_name = f"ERA5.t2m.{date_str}{hour_str}.nc"
+            era5_file_name = f"ERA5.{date_str}{hour_str}.nc"
             era5_file_path = os.path.join(era5_directory, era5_file_name)
 
             if not os.path.exists(gfs_file_path):
@@ -102,6 +102,7 @@ def check_missing_files(start_date, end_date, gfs_directory, era5_directory):
         current_date += time_step
 
     print(f"Total number of missing files: {total_missing_files}")
+    
     
 def calculate_mean_and_std(root_dir, start_date, end_date):
     time_step = timedelta(days=1)
