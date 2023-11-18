@@ -16,7 +16,7 @@ from torch.utils.data import Dataset
 from datetime import timedelta, date
 
 class NetCDFDataset(Dataset):
-    def __init__(self, root_dir, start_date, end_date, transform=True):
+    def __init__(self, root_dir, start_date, end_date, transform=False):
         self.root_dir = root_dir
         self.file_list = self.create_file_list(root_dir, start_date, end_date)
         self.mean = 278.83097 #279.9124
@@ -26,12 +26,12 @@ class NetCDFDataset(Dataset):
     @staticmethod
     def create_file_list(root_dir, start_date, end_date):
         file_list = []
-        time_step = timedelta(days=1)  # 6 hours interval
+        time_step = timedelta(days=1)
         current_date = start_date
 
         while current_date <= end_date:
             for hh in ['00', '06', '12', '18']:
-                filename = f'{os.path.basename(root_dir)}.t2m.{current_date.strftime("%Y%m%d")}{hh}.nc'
+                filename = f'{os.path.basename(root_dir)}.{current_date.strftime("%Y%m%d")}{hh}.nc'
                 file_list.append(filename)
             current_date += time_step
         
@@ -44,17 +44,30 @@ class NetCDFDataset(Dataset):
         file_path = os.path.join(self.root_dir, self.file_list[idx])
         
         # Load NetCDF data
-        dataset = nc.Dataset(file_path)
-        data = dataset.variables['t2m'][:].astype(np.float32)  # Adjust 'data' to the variable name in your file
+        dataset = xr.open_dataset(file_path)
+        
+        # Get a list of all variable names in the dataset
+        variable_names = dataset.data_vars
+        
+        all_data = np.zeros((len(variable_names), 129, 181, 360), dtype=np.float32)
+        
+        for idx, var_name in enumerate(variable_names):
+            data = dataset.variables[var_name][:].astype(np.float32)
+            data = data.fillna(-999)
+            all_data[idx, :, :, :] = data  # Fill the array with data for each variable
+
         dataset.close()
+
+        # data = dataset.variables['t2m'][:].astype(np.float32)  # Adjust 'data' to the variable name in your file
+        # dataset.close()
         
         # Reshape the data to (1, 50, 721, 1440)
-        data = data.reshape(1, 50, 721, 1440)
+        # data = data.reshape(1, 50, 721, 1440)
 
         if self.transform:
-            data = self.normalize_data(data)  # Normalize the data if transform is True
+            all_data = self.normalize_data(all_data)  # Normalize the data if transform is True
 
-        return torch.tensor(data)
+        return torch.tensor(all_data)
 
     def normalize_data(self, data):
         data = (data - self.mean) / self.std
