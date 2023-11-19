@@ -1,10 +1,3 @@
-"""
-Functions to build Graph Neural Network
-
-This code is adapted from https://github.com/CCSI-Toolset/MGN which is available under the
-US Government License
-"""
-
 from typing import Optional, Tuple
 import torch
 from torch import cat, nn
@@ -12,10 +5,8 @@ from torch.utils.checkpoint import checkpoint
 from torch_geometric.nn import MetaLayer
 from torch_scatter import scatter_sum
 
-# MLP for graph processing
+# Multi-Layer Perceptron (MLP) for graph processing
 class MLP(nn.Module):
-    
-
     def __init__(
         self,
         in_dim: int,
@@ -25,27 +16,16 @@ class MLP(nn.Module):
         norm_type: Optional[str] = "LayerNorm",
         use_checkpointing: bool = False,
     ):
-        """
-        MLP
-
-        Args:
-            in_dim: Input dimension
-            out_dim: Output dimension
-            hidden_dim: Number of nodes in hidden layer
-            hidden_layers: Number of hidden layers
-            norm_type: Normalization type one of 'LayerNorm', 'GraphNorm',
-                'InstanceNorm', 'BatchNorm', 'MessageNorm', or None
-            use_checkpointing: Whether to use gradient checkpointing or not
-        """
-
         super(MLP, self).__init__()
         self.use_checkpointing = use_checkpointing
 
+        # Building the MLP layers
         layers = [nn.Linear(in_dim, hidden_dim), nn.ReLU()]
         for _ in range(hidden_layers - 1):
             layers += [nn.Linear(hidden_dim, hidden_dim), nn.ReLU()]
         layers.append(nn.Linear(hidden_dim, out_dim))
 
+        # Adding normalization if specified
         if norm_type is not None:
             assert norm_type in [
                 "LayerNorm",
@@ -60,28 +40,15 @@ class MLP(nn.Module):
         self.model = nn.Sequential(*layers)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Compute the MLP
-
-        Args:
-            x: Node or edge features
-
-        Returns:
-            The transformed tensor
-        """
+        # Using gradient checkpointing if specified
         if self.use_checkpointing:
             out = checkpoint(self.model, x, use_reentrant=False)
         else:
             out = self.model(x)
         return out
 
-# Through MessagePassing class only node features are updated after MP iterations
-# Need to use MetaLayer to also allow edge features to update
-
-# EdgeProcessor 
+# Edge Processor class
 class EdgeProcessor(nn.Module):
-    
-
     def __init__(
         self,
         in_dim_node: int = 128,
@@ -90,18 +57,6 @@ class EdgeProcessor(nn.Module):
         hidden_layers: int = 2,
         norm_type: str = "LayerNorm",
     ):
-        """
-        Edge processor
-
-        Args:
-            in_dim_node: Input node feature dimension
-            in_dim_edge: Input edge feature dimension
-            hidden_dim: Number of nodes in hidden layers
-            hidden_layers: Number of hidden layers
-            norm_type: Normalization type
-                one of 'LayerNorm', 'GraphNorm', 'InstanceNorm', 'BatchNorm', 'MessageNorm', or None
-        """
-
         super(EdgeProcessor, self).__init__()
         self.edge_mlp = MLP(
             2 * in_dim_node + in_dim_edge, in_dim_edge, hidden_dim, hidden_layers, norm_type
@@ -110,31 +65,14 @@ class EdgeProcessor(nn.Module):
     def forward(
         self, src: torch.Tensor, dest: torch.Tensor, edge_attr: torch.Tensor, u=None, batch=None
     ) -> torch.Tensor:
-        """
-        Compute the edge part of the message passing
-
-        Args:
-            src: Source node tensor
-            dest: Destination node tensor
-            edge_attr: Edge attributes
-            u: Global attributes, ignored
-            batch: Batch Ids, ignored
-
-        Returns:
-            The updated edge attributes
-        """
-        out = cat(
-            [src, dest, edge_attr], -1
-        )  # concatenate source node, destination node, and edge embeddings
+        # Concatenating source node, destination node, and edge embeddings
+        out = cat([src, dest, edge_attr], -1)
         out = self.edge_mlp(out)
-        out += edge_attr  # residual connection
-
+        out += edge_attr  # Applying residual connection
         return out
 
-# NodeProcessor 
+# Node Processor class
 class NodeProcessor(nn.Module):
-    
-
     def __init__(
         self,
         in_dim_node: int = 128,
@@ -143,18 +81,6 @@ class NodeProcessor(nn.Module):
         hidden_layers: int = 2,
         norm_type: str = "LayerNorm",
     ):
-        """
-        Node Processor
-
-        Args:
-            in_dim_node: Input node feature dimension
-            in_dim_edge: Input edge feature dimension
-            hidden_dim: Number of nodes in hidden layer
-            hidden_layers: Number of hidden layers
-            norm_type: Normalization type
-                one of 'LayerNorm', 'GraphNorm', 'InstanceNorm', 'BatchNorm', 'MessageNorm', or None
-        """
-
         super(NodeProcessor, self).__init__()
         self.node_mlp = MLP(
             in_dim_node + in_dim_edge, in_dim_node, hidden_dim, hidden_layers, norm_type
@@ -163,31 +89,17 @@ class NodeProcessor(nn.Module):
     def forward(
         self, x: torch.Tensor, edge_index: torch.Tensor, edge_attr: torch.Tensor, u=None, batch=None
     ) -> torch.Tensor:
-        """
-        Compute the node feature updates in message passing
-
-        Args:
-            x: Input nodes
-            edge_index: Edge indicies in COO format
-            edge_attr: Edge attributes
-            u: Global attributes, ignored
-            batch: Batch IDX, ignored
-
-        Returns:
-            torch.Tensor with updated node attributes
-        """
         row, col = edge_index
         scatter_dim = 0
         output_size = x.size(scatter_dim)
-        # aggregate edge message by target
+        # Aggregating edge message by target
         out = scatter_sum(edge_attr, col, dim=scatter_dim, dim_size=output_size)
         out = cat([x, out], dim=-1)
         out = self.node_mlp(out)
-        out += x  # residual connection
-
+        out += x  # Applying residual connection
         return out
 
-
+# Function to build the Graph Net Block using MetaLayer
 def build_graph_processor_block(
     in_dim_node: int = 128,
     in_dim_edge: int = 128,
@@ -197,22 +109,6 @@ def build_graph_processor_block(
     hidden_layers_edge: int = 2,
     norm_type: str = "LayerNorm",
 ) -> torch.nn.Module:
-    """
-    Build the Graph Net Block
-
-    Args:
-        in_dim_node: Input node feature dimension
-        in_dim_edge: Input edge feature dimension
-        hidden_dim_node: Number of nodes in hidden layer for graph node processing
-        hidden_dim_edge: Number of nodes in hidden layer for graph edge processing
-        hidden_layers_node: Number of hidden layers for node processing
-        hidden_layers_edge: Number of hidden layers for edge processing
-        norm_type: Normalization type
-                one of 'LayerNorm', 'GraphNorm', 'InstanceNorm', 'BatchNorm', 'MessageNorm', or None
-    Returns:
-        torch.nn.Module for the graph processing block
-    """
-
     return MetaLayer(
         edge_model=EdgeProcessor(
             in_dim_node, in_dim_edge, hidden_dim_edge, hidden_layers_edge, norm_type
@@ -222,9 +118,8 @@ def build_graph_processor_block(
         ),
     )
 
-# GraphProcessor
+# Graph Processor class
 class GraphProcessor(nn.Module):
-
     def __init__(
         self,
         mp_iterations: int = 15,
@@ -236,21 +131,6 @@ class GraphProcessor(nn.Module):
         hidden_layers_edge: int = 2,
         norm_type: str = "LayerNorm",
     ):
-        """
-        Graph Processor
-
-        Args:
-            mp_iterations: number of message-passing iterations (graph processor blocks)
-            in_dim_node: Input node feature dimension
-            in_dim_edge: Input edge feature dimension
-            hidden_dim_node: Number of nodes in hidden layers for node processing
-            hidden_dim_edge: Number of nodes in hidden layers for edge processing
-            hidden_layers_node: Number of hidden layers for node processing
-            hidden_layers_edge: Number of hidden layers for edge processing
-            norm_type: Normalization type
-                one of 'LayerNorm', 'GraphNorm', 'InstanceNorm', 'BatchNorm', 'MessageNorm', or None
-        """
-
         super(GraphProcessor, self).__init__()
 
         self.blocks = nn.ModuleList()
@@ -270,17 +150,7 @@ class GraphProcessor(nn.Module):
     def forward(
         self, x: torch.Tensor, edge_index: torch.Tensor, edge_attr: torch.Tensor
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """
-        Compute updates to the graph in message passing method
-
-        Args:
-            x: Input nodes
-            edge_index: Edge indicies in COO format
-            edge_attr: Edge attributes
-
-        Returns:
-            Updated nodes and edge attributes
-        """
+        # Iterating through the blocks for message passing
         for block in self.blocks:
             x, edge_attr, _ = block(x, edge_index, edge_attr)
 
