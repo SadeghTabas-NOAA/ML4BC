@@ -3,6 +3,7 @@ import h3
 import numpy as np
 from torch_geometric.data import Data
 import einops
+from gnn import MLP, GraphProcessor
 
 # Decoder graph module
 class Decoder(torch.nn.Module):
