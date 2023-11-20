@@ -4,6 +4,7 @@ import h3
 import numpy as np
 import torch
 from torch_geometric.data import Data
+from gnn import MLP, GraphProcessor
 
 # Encoder graph model
 class Encoder(torch.nn.Module):
