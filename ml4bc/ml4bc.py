@@ -1,91 +1,114 @@
+from typing import Optional
 import torch
-import torch.nn as nn
-import netCDF4 as nc
-import numpy as np
-import os
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms
-from tqdm import tqdm
-from datetime import datetime, timedelta, date
-import xarray as xr
-import torch.nn.functional as F
+from huggingface_hub import PyTorchModelHubMixin
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-class GraphConvolution(nn.Module):
-    def __init__(self, in_features, out_features):
-        super(GraphConvolution, self).__init__()
-        self.linear = nn.Linear(in_features, out_features)
+class GraphWeatherModel(torch.nn.Module, PyTorchModelHubMixin):
+    """
+    Weather Model utilizing Graph Neural Networks.
 
-    def forward(self, x, adjacency_matrix):
+    This model predicts weather variables using a graph neural network architecture,
+    transforming data from latitude/longitude grids to abstract latent features
+    on an icosahedron grid.
+    """
+
+    def __init__(
+        self,
+        lat_lon_coords: list,
+        resolution: int = 2,
+        input_feature_dim: int = 78,
+        auxiliary_feature_dim: int = 0,
+        output_feature_dim: Optional[int] = None,
+        node_hidden_dim: int = 256,
+        edge_hidden_dim: int = 256,
+        num_processor_blocks: int = 9,
+        hidden_node_processor_dim: int = 256,
+        hidden_edge_processor_dim: int = 256,
+        hidden_node_processor_layers: int = 2,
+        hidden_edge_processor_layers: int = 2,
+        hidden_decoder_dim: int = 128,
+        decoder_layers: int = 2,
+        norm_type: str = "LayerNorm",
+        use_checkpointing: bool = False,
+    ):
         """
-        x: Input features (batch_size, num_nodes, input_features)
-        adjacency_matrix: Graph adjacency matrix (batch_size, num_nodes, num_nodes)
+        Initialize the Weather Forecasting Model.
+
+        Args:
+            ... (Same arguments as provided in the original code)
         """
-        # Graph convolution for each batch
-        x = torch.matmul(adjacency_matrix, x.transpose(1, 2)).transpose(1, 2)
-        x = self.linear(x)  # Linear layer
-        x = F.relu(x)  # ReLU activation
+        super().__init__()
+        self.input_feature_dim = input_feature_dim
+        if output_feature_dim is None:
+            output_feature_dim = self.input_feature_dim
+
+        # Encoder for transforming lat/lon data into an icosahedron grid
+        self.encoder = Encoder(
+            lat_lons=lat_lon_coords,
+            resolution=resolution,
+            input_dim=input_feature_dim + auxiliary_feature_dim,
+            output_dim=node_hidden_dim,
+            output_edge_dim=edge_hidden_dim,
+            hidden_dim_processor_edge=hidden_edge_processor_dim,
+            hidden_layers_processor_node=hidden_node_processor_layers,
+            hidden_dim_processor_node=hidden_node_processor_dim,
+            hidden_layers_processor_edge=hidden_edge_processor_layers,
+            mlp_norm_type=norm_type,
+            use_checkpointing=use_checkpointing,
+        )
+
+        # Processor for message passing and graph transformations
+        self.processor = Processor(
+            input_dim=node_hidden_dim,
+            edge_dim=edge_hidden_dim,
+            num_blocks=num_processor_blocks,
+            hidden_dim_processor_edge=hidden_edge_processor_dim,
+            hidden_layers_processor_node=hidden_node_processor_layers,
+            hidden_dim_processor_node=hidden_node_processor_dim,
+            hidden_layers_processor_edge=hidden_edge_processor_layers,
+            mlp_norm_type=norm_type,
+        )
+
+        # Decoder for generating the forecast
+        self.decoder = Decoder(
+            lat_lons=lat_lon_coords,
+            resolution=resolution,
+            input_dim=node_hidden_dim,
+            output_dim=output_feature_dim,
+            output_edge_dim=edge_hidden_dim,
+            hidden_dim_processor_edge=hidden_edge_processor_dim,
+            hidden_layers_processor_node=hidden_node_processor_layers,
+            hidden_dim_processor_node=hidden_node_processor_dim,
+            hidden_layers_processor_edge=hidden_edge_processor_layers,
+            mlp_norm_type=norm_type,
+            hidden_dim_decoder=hidden_decoder_dim,
+            hidden_layers_decoder=decoder_layers,
+            use_checkpointing=use_checkpointing,
+        )
+
+    def forward(self, features: torch.Tensor) -> torch.Tensor:
+        """
+        Compute the forecasted weather variables.
+
+        Args:
+            features: The input features, aligned with the order of lat_lon_coords
+
+        Returns:
+            The forecasted weather variables
+        """
+        x, edge_idx, edge_attr = self.encoder(features)
+        x = self.processor(x, edge_idx, edge_attr)
+        x = self.decoder(x, features[..., : self.input_feature_dim])
         return x
 
-class GraphTemporalModel(nn.Module):
-    def __init__(self, num_variables, num_nodes, num_time_steps, hidden_size=32, num_layers=2):
-        super(GraphTemporalModel, self).__init__()
+    def predict(self, features: torch.Tensor) -> torch.Tensor:
+        """Make predictions based on the input features."""
+        return self.forward(features)
 
-        self.num_variables = num_variables
-        self.num_nodes = num_nodes
-        self.num_time_steps = num_time_steps
+    def load_pretrained(self, path: str) -> None:
+        """Load pre-trained weights or model from a specified path."""
+        self.load_state_dict(torch.load(path))
 
-        # Graph convolutional layers
-        self.graph_conv1 = GraphConvolution(self.num_variables, 16)
-        self.graph_conv2 = GraphConvolution(16, 8)
-
-        # LSTM layer to capture temporal dependencies
-        self.lstm = nn.LSTM(input_size=8, hidden_size=hidden_size, num_layers=num_layers, batch_first=True)
-
-        # Fully connected layer
-        self.fc = nn.Linear(hidden_size, 1)
-
-    def forward(self, x, adjacency_matrix):
-        """
-        x: Input features (batch_size, num_variables, num_time_steps, num_nodes)
-        adjacency_matrix: Graph adjacency matrix (batch_size, num_nodes, num_nodes)
-        """
-
-        # Reshape input for graph convolution
-        x = x.permute(0, 3, 1, 2).contiguous()
-        x = x.view(-1, self.num_variables, self.num_time_steps)
-
-        # Apply graph convolution layers
-        x = self.graph_conv1(x, adjacency_matrix)
-        x = self.graph_conv2(x, adjacency_matrix)
-
-        # Global average pooling
-        x = x.mean([2])
-
-        # Reshape for LSTM
-        x = x.view(-1, self.num_time_steps, 8)
-
-        # Apply LSTM
-        x, _ = self.lstm(x)
-
-        # Fully connected layer
-        x = self.fc(x[:, -1, :])
-
-        # Reshape to match output shape
-        x = x.view(-1, self.num_nodes, 1)
-
-        return x
-
-
-# Example usage
-num_variables = 10  # Change this based on your actual number of variables
-num_nodes = 181 * 360  # Assuming spatial grid of 181x360
-num_time_steps = 129
-# Create the model
-if torch.cuda.device_count() > 1:
-    print("Using", torch.cuda.device_count(), "GPUs!")
-    dlmodel = nn.DataParallel(GraphTemporalModel(num_variables, num_nodes, num_time_steps)).to(device)
-else:
-    dlmodel = GraphTemporalModel(num_variables, num_nodes, num_time_steps).to(device)
-    
+    def save_model(self, path: str) -> None:
+        """Save the model's weights or state to the specified path."""
+        torch.save(self.state_dict(), path)
