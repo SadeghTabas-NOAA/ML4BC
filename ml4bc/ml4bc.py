@@ -1,7 +1,9 @@
 from typing import Optional
 import torch
 from huggingface_hub import PyTorchModelHubMixin
-
+from encoder import Encoder
+from decoder import Decoder
+from processor import Processor
 
 class GraphWeatherModel(torch.nn.Module, PyTorchModelHubMixin):
     """
