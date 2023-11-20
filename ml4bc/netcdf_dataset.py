@@ -12,8 +12,11 @@ Revision history:
 import netCDF4 as nc
 import numpy as np
 import os
+import torch
 from torch.utils.data import Dataset
 from datetime import timedelta, date
+import xarray as xr
+
 
 class NetCDFDataset(Dataset):
     def __init__(self, root_dir, start_date, end_date, transform=False):
