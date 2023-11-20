@@ -1,4 +1,5 @@
 import torch
+from gnn import GraphProcessor
 
 # Processor for latent graph
 class Processor(torch.nn.Module):
