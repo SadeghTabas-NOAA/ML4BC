@@ -71,7 +71,7 @@ class NetCDFDataset(Dataset):
             all_data = np.append(all_data, time_variable, axis=0)
         
         if self.transform:
-            all_data = self.normalize_data(all_data)
+            all_data = all_data.reshape(all_data.shape[:-2] + (-1,))
 
         return torch.tensor(all_data)
 
