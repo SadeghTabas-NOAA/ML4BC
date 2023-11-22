@@ -63,15 +63,15 @@ class NetCDFDataset(Dataset):
         dataset.close()
 
         all_data = np.stack(all_data)  # Stack the data along the variable dimension
-        
         if self.process=='gfs':
-            time_variable = np.full((1, 181, 360), time_idx)  # Create an array for the time index
+            time_variable = np.full((1, 181, 360), np.array(time_idx, dtype=np.float32))  # Create an array for the time index
             
             # Add time index as a new variable dimension
             all_data = np.append(all_data, time_variable, axis=0)
         
         if self.transform:
             all_data = all_data.reshape(all_data.shape[:-2] + (-1,))
+            #all_data = np.transpose(all_data, (0, 2, 1))
 
         return torch.tensor(all_data)
 
@@ -82,6 +82,7 @@ class NetCDFDataset(Dataset):
     def rescale_data(self, data):
         data = (data * self.std) + self.mean
         return data
+    
 
 def check_missing_files(start_date, end_date, gfs_directory, era5_directory):
     time_step = timedelta(days=1)
