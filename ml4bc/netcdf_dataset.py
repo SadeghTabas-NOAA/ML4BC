@@ -7,6 +7,7 @@ Description: This script provides utilities, including:
 Author: Sadegh Sadeghi Tabas (sadegh.tabas@noaa.gov)
 Revision history:
     -20231029: Sadegh Tabas, initial code
+    -20231129: Sadegh Tabas, update the class to account for multiple vars as well as time idx
 '''
 
 import netCDF4 as nc
@@ -19,11 +20,12 @@ import xarray as xr
 
 
 class NetCDFDataset(Dataset):
-    def __init__(self, root_dir, start_date, end_date, transform=False):
+    def __init__(self, root_dir, process, start_date, end_date, transform=False):
         self.root_dir = root_dir
+        self.process = process
         self.file_list = self.create_file_list(root_dir, start_date, end_date)
-        self.mean = 278.83097 #279.9124
-        self.std = 56.02780 #107.1107
+        self.mean = 278.83097
+        self.std = 56.02780
         self.transform = transform
 
     @staticmethod
@@ -41,34 +43,35 @@ class NetCDFDataset(Dataset):
         return file_list
 
     def __len__(self):
-        return len(self.file_list)
+        return len(self.file_list) * 129  # Each file has 129 time dimensions
 
     def __getitem__(self, idx):
-        file_path = os.path.join(self.root_dir, self.file_list[idx])
+        file_idx = idx // 129  # Calculate the file index
+        time_idx = idx % 129  # Calculate the time index within the file
         
-        # Load NetCDF data
+        file_path = os.path.join(self.root_dir, self.file_list[file_idx])
         dataset = xr.open_dataset(file_path)
-        
-        # Get a list of all variable names in the dataset
         variable_names = dataset.data_vars
+
+        all_data = []
         
-        all_data = np.zeros((len(variable_names), 129, 181, 360), dtype=np.float32)
-        
-        for idx, var_name in enumerate(variable_names):
-            data = dataset.variables[var_name][:].astype(np.float32)
+        for var_name in variable_names:
+            data = dataset.variables[var_name][time_idx].astype(np.float32)
             data = data.fillna(-999)
-            all_data[idx, :, :, :] = data  # Fill the array with data for each variable
+            all_data.append(data)
 
         dataset.close()
 
-        # data = dataset.variables['t2m'][:].astype(np.float32)  # Adjust 'data' to the variable name in your file
-        # dataset.close()
+        all_data = np.stack(all_data)  # Stack the data along the variable dimension
         
-        # Reshape the data to (1, 50, 721, 1440)
-        # data = data.reshape(1, 50, 721, 1440)
-
+        if self.process=='gfs':
+            time_variable = np.full((1, 181, 360), time_idx)  # Create an array for the time index
+            
+            # Add time index as a new variable dimension
+            all_data = np.append(all_data, time_variable, axis=0)
+        
         if self.transform:
-            all_data = self.normalize_data(all_data)  # Normalize the data if transform is True
+            all_data = self.normalize_data(all_data)
 
         return torch.tensor(all_data)
 
