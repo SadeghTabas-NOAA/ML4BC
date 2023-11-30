@@ -9,7 +9,6 @@ Revision history:
     -20231029: Sadegh Tabas, initial code
     -20231129: Sadegh Tabas, update the class to account for multiple vars as well as time idx
 '''
-
 import netCDF4 as nc
 import numpy as np
 import os
@@ -27,6 +26,12 @@ class NetCDFDataset(Dataset):
         self.mean = 278.83097
         self.std = 56.02780
         self.transform = transform
+        
+        # Define latitudes and longitudes
+        self.lat_lons = []
+        for lat in range(-90, 91, 1):
+            for lon in range(0, 360, 1):
+                self.lat_lons.append([lat, lon])
 
     @staticmethod
     def create_file_list(root_dir, start_date, end_date):
@@ -63,15 +68,19 @@ class NetCDFDataset(Dataset):
         dataset.close()
 
         all_data = np.stack(all_data)  # Stack the data along the variable dimension
+        all_data = all_data.reshape(all_data.shape[:-2] + (-1,))
+        all_data = np.transpose(all_data, (1,0))
+        
         if self.process=='gfs':
-            time_variable = np.full((1, 181, 360), np.array(time_idx, dtype=np.float32))  # Create an array for the time index
+            time_variable = np.full((181*360, 1), np.array(time_idx, dtype=np.float32))  # Create an array for the time index
+            sin_lat_lons = np.sin(np.array(self.lat_lons) * np.pi / 180.0).astype(np.float32)
+            cos_lat_lons = np.cos(np.array(self.lat_lons) * np.pi / 180.0).astype(np.float32)
             
-            # Add time index as a new variable dimension
-            all_data = np.append(all_data, time_variable, axis=0)
+            # Add time, sin and cos index as a new variables dimension
+            all_data = np.concatenate((all_data, time_variable, sin_lat_lons, cos_lat_lons), axis=1)
         
         if self.transform:
-            all_data = all_data.reshape(all_data.shape[:-2] + (-1,))
-            all_data = np.transpose(all_data, (1,0))
+            pass
 
         return torch.tensor(all_data)
 
@@ -82,7 +91,6 @@ class NetCDFDataset(Dataset):
     def rescale_data(self, data):
         data = (data * self.std) + self.mean
         return data
-    
 
 def check_missing_files(start_date, end_date, gfs_directory, era5_directory):
     time_step = timedelta(days=1)
